@@ -16,11 +16,13 @@ int main()
     opcode["DIV"] = {"IS", "08"};
     opcode["READ"] = {"IS", "09"};
     opcode["PRINT"] = {"IS", "10"};
+
     opcode["START"] = {"AD", "01"};
     opcode["END"] = {"AD", "02"};
     opcode["ORIGIN"] = {"AD", "03"};
     opcode["EQU"] = {"AD", "04"};
     opcode["LTORG"] = {"AD", "05"};
+    
     opcode["DC"] = {"DL", "01"};
     opcode["DS"] = {"DL", "02"};
 
