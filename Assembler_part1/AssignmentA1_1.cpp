@@ -37,7 +37,7 @@ int main()
     opcode["ANY"] = {"6", ""};
 
     ifstream fin;
-    fin.open("input.txt");
+    fin.open("input2.txt");
 
     ofstream fout;
     fout.open("output.txt");
@@ -210,6 +210,7 @@ int main()
             fout << lc << " ";
             fout << "(" << opcode[word].first << ", " << opcode[word].second << ") ";
 
+            int increment = 1;  // Default increment
             while (st >> word)
             {
                 if (operation == "DC")
@@ -220,6 +221,7 @@ int main()
                 else if (operation == "DS")
                 {
                     fout << "(C, " << word << ") ";
+                    increment = stoi(word);  // Increment by specified value in DS
                 }
                 else if (word[0] == '=')
                 {
@@ -239,7 +241,7 @@ int main()
                     fout << "(S, " << symtab[word].second << ") ";
                 }
             }
-            lc++;
+            lc += increment;
         }
         fout << endl;
     }
