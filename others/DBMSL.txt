@@ -1,0 +1,951 @@
+MongoDB Connection command on Lab : mongo 10.10.12.248/te31406_db -u te31406 -p te31406
+
+mysql -h 10.10.13.97 -u te31406 -p   
+Password : te31406 
+Then, use te31406_db
+
+
+
+======================================== Assignment 4 ========================================================
+
+Assignment 4A
+
+Consider Tables:
+1. Borrower(Roll no, Name, Date of Issue, Name of Book, Status)
+2. Fine(Roll no, Date, Amt) number of days (from date of issue).
+Accept Roll no and Name of Book from user. Check no of days (from date of issue)
+If days are between 15 to 30 then fine amount will be Rs 5 per day.
+If no. of days>30, per day fine will be Rs 50 per day and for days less than 30, Rs.5 per day. After
+submitting the book, status will change from I to R.
+If condition of fine is true, then details will be stored into fine table.
+Also handles the exception by named exception handler or user define exception handler.
+
+→ PL/SQL code block :
+
+create table Borrower
+(
+    Roll_no int primary key,
+    Name varchar(20),
+    DateofIssue date,
+    NameofBook varchar(20),
+    Status char
+);
+
+create table Fine
+(
+   Roll_no int,
+   Date date,
+   Amt float,
+   foreign key(Roll_no) references Borrower(Roll_no)
+);
+
+insert into Borrower values(1,'Ketan','2024-05-29','The 7 Wonders','I');
+insert into Borrower values(2,'Hashim','2024-06-20','Knight of Assassins','I');
+insert into Borrower values(3,'Shreyash','2024-07-25','Darkest Shadow','I');
+insert into Borrower values(4,'Jagdish','2024-07-05','The Galaxy','I');
+
+delimiter $$
+
+CREATE OR REPLACE PROCEDURE calc_fine(IN roll_no INT)
+BEGIN
+    DECLARE days INT;
+    DECLARE fine FLOAT;
+    DECLARE issue_date_borrower DATE;
+    DECLARE error INT DEFAULT 0;
+    
+    -- Get the Date of Issue for the given roll number
+    SELECT Borrower.DateofIssue
+    INTO issue_date_borrower
+    FROM Borrower
+    WHERE Borrower.Roll_no = roll_no
+    LIMIT 1;
+    
+    -- Check if the roll number is invalid
+    check_block:BEGIN
+    
+    IF issue_date_borrower IS NULL THEN
+        SELECT 'Invalid Roll No' AS Message;
+        SET error=1;
+        LEAVE check_block;
+    END IF;
+    
+    End check_block;
+
+    -- Calculate the number of days since the Date of Issue
+    SET days = DATEDIFF(CURDATE(), issue_date_borrower);
+
+    -- Calculate fine based on the number of days
+    IF days >= 15 AND days <= 30 THEN
+        SET fine = 5 * (days-15);
+    ELSEIF days > 30 THEN
+        SET fine = (5 * 15) + (50 * (days - 30));
+    ELSE
+        SET fine = 0;
+    END IF;
+
+    -- Insert fine details and update the status
+    BEGIN
+        DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            SET error = 1;
+        END;
+
+        IF fine > 0 THEN
+            INSERT INTO Fine (Roll_no, Date, Amt) VALUES (roll_no, CURDATE(), fine);
+        END IF;
+
+        UPDATE Borrower SET Status = 'R' WHERE Roll_no = roll_no;
+    END;
+
+    -- Output messages
+    IF error = 1 THEN
+        SELECT 'An error occurred while processing the request' AS Message;
+    ELSE
+        SELECT 'Fine Amount inserted in table' AS Message;
+    END IF;
+
+END $$
+
+call calc_fine(2)$$
+
+Assignment 4B
+
+Write a PLSQL code block to calculate the area of a circle for a value of radius varying from 5 to 9. Store the radius and the corresponding values of calculated area in an empty table named areas, consisting of two columns, radius and area.
+
+→ PL/SQL code block :
+
+DELIMITER //
+
+CREATE OR REPLACE PROCEDURE calculate_circle_area()
+BEGIN
+    DECLARE new_radius INT;
+    DECLARE new_area DOUBLE;
+    DECLARE pi DOUBLE;
+    
+    SET pi := 3.14159;
+
+    SET new_radius := 5;
+    WHILE new_radius <= 9 DO
+        SET new_area := pi * POW(new_radius, 2);
+        INSERT INTO Areas VALUES (new_radius, new_area);
+        SET new_radius := new_radius + 1;
+    END WHILE;
+END //
+CALL calculate_circle_area()//
+
+==============================================================================================================
+======================================== Assignment 5 ========================================================
+
+Named PLSQL Block: PL/SQL Stored Procedure and Stored Function.
+Write a Stored Procedure namely proc Grade for the categorization of student. If marks scored
+by students in examination is <=1500 and marks>=990 then student will
+be placed in distinction category if marks scored are between 989 and900 category is first class, if
+marks899and 825 category is Higher Second Class.
+Write a PL/SQLblock to use procedure created with above requirement.
+Stud Marks(Rollno,name, total marks) Result(Rollno,Name, Class)
+
+→ PL/SQL code block :
+
+
+create table stud_marks
+(
+    rollno int primary key,
+    name varchar(30) not null,
+    totalmarks int
+);
+create table result
+(
+    roll_no int,
+    name varchar(30),
+    class varchar(30),
+    foreign key(roll_no) references stud_marks(rollno) on delete cascade
+);
+
+insert into stud_marks values(1,'Hashim',1470),(2,'Ketan',1200),(3,'Anish',980),(4,'Niranjan',875),(5,'Varad',830);
+
+delimiter //
+CREATE OR REPLACE PROCEDURE grade(IN rollnum INT)
+BEGIN
+    DECLARE name VARCHAR(30);
+    DECLARE category VARCHAR(30);
+    DECLARE marks INT;
+    DECLARE error INT DEFAULT 0;
+    
+    
+    -- Select marks and name based on roll number
+    SELECT stud_marks.totalmarks, stud_marks.name 
+    INTO marks, name 
+    FROM stud_marks 
+    WHERE stud_marks.rollno = rollnum;
+
+    -- Check for invalid marks && rollno
+    IF marks IS NULL THEN
+        SELECT 'INVALID ROLL NUMBER!!!' AS message;
+        set error=1;
+    ELSEIF marks<=0 THEN
+        SELECT 'INVALID MARKS!!!' AS message;
+        SET error = 1;
+    ELSE
+        -- Determine category based on marks
+        IF marks >= 990 AND marks <= 1500 THEN
+            SET category = 'Distinction';
+        ELSEIF marks >= 900 AND marks <= 989 THEN
+            SET category = 'First Class';
+        ELSEIF marks >= 825 AND marks <= 899 THEN
+            SET category = 'Second Class';
+        ELSE 
+            SET category = 'Fail';
+        END IF;
+
+        -- Insert into result table if category is determined
+        IF category IS NOT NULL THEN
+            INSERT INTO result (roll_no, name, class) VALUES (rollnum, name, category);
+            SELECT 'Result inserted into table' AS Message;
+        END IF;
+    END IF;
+
+    -- Handle error case
+    IF error = 1 THEN
+        SELECT 'An error occurred while processing the request' AS Message;
+    END IF;
+END //
+
+
+CREATE OR REPLACE FUNCTION grading(rollnum INT) RETURNS VARCHAR(255)
+BEGIN
+    DECLARE name VARCHAR(30);
+    DECLARE category VARCHAR(30);
+    DECLARE marks INT;
+    DECLARE error INT DEFAULT 0;
+    DECLARE resultMessage VARCHAR(255);
+
+    -- Select marks and name based on roll number
+    SELECT stud_marks.totalmarks, stud_marks.name 
+    INTO marks, name 
+    FROM stud_marks 
+    WHERE stud_marks.rollno = rollnum;
+
+    -- Check for invalid marks
+    IF marks IS NULL THEN
+        SET resultMessage = 'INVALID ROLL NUMBER!!!';
+    ELSEIF marks <= 0 THEN
+        SET resultMessage = 'INVALID MARKS!!!';
+    ELSE
+        -- Determine category based on marks
+        IF marks >= 990 AND marks <= 1500 THEN
+            SET category = 'Distinction';
+        ELSEIF marks >= 900 AND marks <= 989 THEN
+            SET category = 'First Class';
+        ELSEIF marks >= 825 AND marks <= 899 THEN
+            SET category = 'Second Class';
+        ELSE 
+            SET category = 'Fail';
+        END IF;
+
+        -- Insert into result table if category is determined
+        IF category IS NOT NULL THEN
+            INSERT INTO result (roll_no, name, class) VALUES (rollnum, name, category);
+            SET resultMessage = 'Result inserted into table';
+        END IF;
+    END IF;
+
+    -- Handle error case
+    IF error = 1 THEN
+        SET resultMessage = 'An error occurred while processing the request';
+    END IF;
+
+    RETURN resultMessage;
+END //
+
+==============================================================================================================
+======================================== Assignment 6 ========================================================
+
+Cursors: Write a PL/SQL block of code using parameterized Cursor, that will merge the data
+available in the newly created table Cust_New with the data available in the table Cust_Old. If
+the data in the first table already exist in the second table then that data should be skipped.
+Frame the separate problem statement for writing PL/SQL block to implement all types.
+
+→ PL/SQL code block :
+
+create table new_emp(
+	emp_id INT,
+	emp_name VARCHAR(20),
+	emp_dept VARCHAR(10),
+	emp_salary INT,
+	primary key(emp_id)
+);
+
+create table old_emp(
+	emp_id INT,
+	emp_name VARCHAR(20),
+	emp_dept VARCHAR(10),
+	emp_salary INT,
+	primary key(emp_id)
+);
+
+insert into old_emp values
+( 1 , 'Hashim' , 'Sales' , 88000 ) ,
+( 2 , 'Anish' , 'Dev' , 29000 ) ,
+( 3 , 'Niranjan' , 'Testing' , 34000 ) ,
+( 4 , 'Ketan' , 'Sales' , 10000 ) ,
+( 5 , 'Anshul' , 'Marketing' , 45000 ) ,
+( 6 , 'Anurag' , 'Sales' , 9000 ) ,
+( 7 , 'Varad' , 'Testing' , 10000 ) ,
+( 8 , 'Shreyash' , 'Sales' , 54000 ) ; 
+
+insert into new_emp values(3,'Niranjan','Testing',34000);
+insert into new_emp values(9,'Rounak','HR',50000);
+insert into new_emp values(7,'Varad','Testing',10000);
+
+
+DELIMITER //
+
+CREATE OR REPLACE PROCEDURE copy_data()
+BEGIN
+    DECLARE v_emp_id INT;
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT emp_id FROM old_emp;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur;
+    
+    read_loop: LOOP
+        FETCH cur INTO v_emp_id;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        
+        -- Check if the emp_id from old_emp exists in new_emp
+        IF NOT EXISTS (SELECT 1 FROM new_emp WHERE emp_id = v_emp_id) THEN
+            -- Insert data from old_emp to new_emp
+            INSERT INTO new_emp (emp_id, emp_name, emp_dept, emp_salary)
+            SELECT emp_id, emp_name, emp_dept, emp_salary
+            FROM old_emp
+            WHERE emp_id = v_emp_id;
+        END IF;
+    END LOOP;
+    
+    CLOSE cur;
+END //
+
+DELIMITER ;
+
+
+==============================================================================================================
+======================================== Assignment 7 ========================================================
+
+Write a database trigger on Library table. The System should keep track of the records that are
+being updated or deleted. The old value of updated or deleted records should be added in
+Library_Audit table
+
+→ PL/SQL code block :
+
+create table Library (
+    book_id INT PRIMARY KEY,
+    book_title VARCHAR(255) NOT NULL,
+    book_author VARCHAR(255) NOT NULL
+);
+
+create table Library_Audit (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    action_type ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    book_id INT,
+    book_title VARCHAR(255),
+    book_author VARCHAR(255)
+);
+
+DELIMITER //
+
+CREATE TRIGGER after_library_insert
+AFTER INSERT ON Library
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_Audit (action_type, book_id, book_title, book_author)
+    VALUES ('INSERT', NEW.book_id, NEW.book_title, NEW.book_author);
+END //
+
+CREATE TRIGGER before_library_update
+BEFORE UPDATE ON Library
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_Audit (action_type, book_id, book_title, book_author)
+    VALUES ('UPDATE', OLD.book_id, OLD.book_title, OLD.book_author);
+END //
+
+
+CREATE TRIGGER before_library_delete
+BEFORE DELETE ON Library
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_Audit (action_type, book_id, book_title, book_author)
+    VALUES ('DELETE', OLD.book_id, OLD.book_title, OLD.book_author);
+END //
+
+DELIMITER ;
+==============================================================================================================
+======================================== Assignment 8 ========================================================
+
+Write a program to implement MySQL/Oracle database connectivity with
+any front end language to implement Database navigation operations (add, delete, edit etc.)
+DesignandDevelopMongoDBQueriesusingCRUDoperations.(UseCRUDoperations, SAVE
+method, logical operators etc.).
+
+package mysql;
+import java.sql.*;
+import java.util.Scanner;
+
+public class Mysqlconnect {
+    private static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/test", "root", "hash@5152"
+        );
+    }
+
+    private static void createTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS jdbc_Student (rollno INT PRIMARY KEY, name VARCHAR(20))";
+        
+        try (Connection conn = getConnection(); Statement st = conn.createStatement()) {
+            st.executeUpdate(sql);
+            System.out.println("Table Created Successfully");
+        } catch (SQLException e) {
+            System.out.println("Error creating table: " + e.getMessage());
+        }
+    }
+
+	public static void main(String[] args) {
+		createTable();
+        Scanner scanner = new Scanner(System.in);
+        boolean running = true;
+
+        while (running) {
+            System.out.println("Select operation:");
+            System.out.println("1. Insert");
+            System.out.println("2. Update");
+            System.out.println("3. Select");
+            System.out.println("4. Delete");
+            System.out.println("5. Exit");
+            
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            try (Connection conn = getConnection(); Statement st = conn.createStatement()) {
+                switch (choice) {
+                    case 1: // Insert
+                        System.out.print("Enter rollno: ");
+                        int rollnoInsert = scanner.nextInt();
+                        scanner.nextLine(); // Consume newline
+                        System.out.print("Enter Name: ");
+                        String nameInsert = scanner.nextLine();
+                        String sqlInsert = "INSERT INTO jdbc_Student (rollno, name) VALUES (" +
+                                            rollnoInsert + ", '" + nameInsert + "')";
+                        st.executeUpdate(sqlInsert);
+                        System.out.println("Successfully Inserted");
+                        break;
+                        
+                    case 2: // Update
+                        System.out.print("Enter rollno to update: ");
+                        int rollnoUpdate = scanner.nextInt();
+                        scanner.nextLine(); // Consume newline
+                        System.out.print("Enter new Name: ");
+                        String nameUpdate = scanner.nextLine();
+                        
+                        // Check if record exists before updating - Changes made here
+                        ResultSet rsUpdate = st.executeQuery("SELECT COUNT(*) AS count FROM jdbc_Student WHERE rollno = " + rollnoUpdate);
+                        rsUpdate.next();
+                        if (rsUpdate.getInt("count") == 0) {
+                            System.out.println("No such record exists for rollno: " + rollnoUpdate);
+                        } else {
+                            String sqlUpdate = "UPDATE jdbc_Student SET name = '" + nameUpdate +
+                                                "' WHERE rollno = " + rollnoUpdate;
+                            st.executeUpdate(sqlUpdate);
+                            System.out.println("Successfully Updated");
+                        }
+                        rsUpdate.close(); // Close ResultSet after use
+                        break;
+                        
+                    case 3: // Select
+                        String sqlSelect = "SELECT * FROM jdbc_Student";
+                        ResultSet rs = st.executeQuery(sqlSelect);
+                        System.out.println("Rollno\tName");
+                        while (rs.next()) {
+                            System.out.println(rs.getInt("rollno") + "\t" + rs.getString("name"));
+                        }
+                        rs.close(); // Close ResultSet after use
+                        break;
+                        
+                    case 4: // Delete
+                        System.out.print("Enter rollno to delete: ");
+                        int rollnoDelete = scanner.nextInt();
+                        
+                        // Check if record exists before deleting - Changes made here
+                        ResultSet rsDelete = st.executeQuery("SELECT COUNT(*) AS count FROM jdbc_Student WHERE rollno = " + rollnoDelete);
+                        rsDelete.next();
+                        if (rsDelete.getInt("count") == 0) {
+                            System.out.println("No such record exists for rollno: " + rollnoDelete);
+                        } else {
+                            String sqlDelete = "DELETE FROM jdbc_Student WHERE rollno = " + rollnoDelete;
+                            st.executeUpdate(sqlDelete);
+                            System.out.println("Record Deleted");
+                        }
+                        rsDelete.close(); // Close ResultSet after use
+                        break;
+                        
+                    case 5: // Exit
+                        running = false;
+                        System.out.println("Exiting...");
+                        break;
+                        
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                        break;
+                }
+            } catch (SQLException e) {
+                System.out.println("SQL Error: " + e.getMessage());
+            }
+        }
+        scanner.close();
+
+	}
+
+}
+
+==============================================================================================================
+
+======================================== Assignment 9 ========================================================
+MongoDB Queries: 
+Design and Develop MongoDB Queries using CRUD operations. (Use CRUD operations, SAVE method, 
+logical operators)
+
+->  1. Create table/collection : 
+	Mongo :
+		db.createCollection("Student")
+	SQL : 
+		create table Student(
+			rollno int PRIMARY KEY,
+			name varchar(30),
+			marks int
+		);
+		
+  2. Display  : 
+	Mongo : 
+		db.Student.find() // Row wise displaying
+		db.Student.find().pretty() // Record wise displaying, each record on new line
+	SQL : 
+		select * from Student;
+  3. Insert  : 
+	Mongo : 
+		db.Student.insert({"rollno":6,"name":"Hashim","marks":99})
+	SQL : 
+		insert into Student values(6,"Hashim",99);
+  4. Update  : 
+	Mongo : 
+		db.Student.update({"rollno":6},{$set:{"name":"Hashim Babat"}})
+		db.Student.update({"rollno":17},{$set:{"name":"Anish Dabhane"}})
+		db.Student.update({"rollno":11},{$set:{"name":"Aarya Bhave"}})
+		db.Student.update({"rollno":19},{$set:{"name":"Niranjan Dangi"}})
+	SQL : 
+		update table Student set name="Hashim Babat" where rollno = 6;
+		update table Student set name="Niranjan Dangi" where rollno = 19;
+		update table Student set name="Aarya Bhave" where rollno = 11;
+		update table Student set name="Anish Dabhane" where rollno = 17;
+  5. Delete  : 
+	Mongo : 
+		db.Student.remove({"rollno":11})
+	SQL : 
+		delete from Student where rollno=11
+  6. Logical Operators  : 
+	Mongo : 
+		AND :
+			db.Student.find({$and:[{"rollno":6},{"marks":99}]}).pretty()
+		OR : 
+			db.Student.find({$or:[{"rollno":6},{"marks":90}]}).pretty()
+	SQL : 
+		AND :
+			select * from Student where rollno=6 AND marks=99;
+		OR : 
+			select * from Student where rollno=6 OR marks=90;
+==============================================================================================================
+
+======================================= Assignment 10 ========================================================
+MongoDB Aggregation and Indexing: 
+Implement aggregation and indexing with suitable example using MongoDB.
+
+->
+db.employee.insertMany([
+  {
+    name: 'Aarav Mehta',
+    age: 34,
+    city: 'Hyderabad',
+    dept: 'HR',
+    salary: 58000,
+    projects: {
+      current: 'Employee Engagement',
+      completed: 'Recruitment Automation'
+    },
+    skills: [
+      { name: 'Communication', rating: 9 },
+      { name: 'Talent Acquisition', rating: 8 }
+    ],
+    empId: 2001
+  },
+  {
+    name: 'Ishita Rao',
+    age: 29,
+    city: 'Pune',
+    dept: 'Marketing',
+    salary: 70000,
+    projects: {
+      current: 'Product Launch',
+      completed: 'Social Media Campaign'
+    },
+    skills: [
+      { name: 'SEO', rating: 9.5 },
+      { name: 'Content Writing', rating: 9 },
+      { name: 'Google Ads', rating: 8 }
+    ],
+    empId: 2002
+  },
+  {
+    name: 'Vikram Singh',
+    age: 40,
+    city: 'Noida',
+    dept: 'Finance',
+    salary: 85000,
+    projects: {
+      current: 'Budget Planning',
+      completed: 'Cost Optimization'
+    },
+    skills: [
+      { name: 'Financial Analysis', rating: 9 },
+      { name: 'Risk Management', rating: 8 }
+    ],
+    empId: 2003
+  },
+  {
+    name: 'Shreya Gupta',
+    age: 31,
+    city: 'Kolkata',
+    dept: 'Marketing',
+    salary: 78000,
+    projects: {
+      current: 'Project Coordination',
+      completed: 'Agile Implementation'
+    },
+    skills: [
+      { name: 'Project Management', rating: 8 },
+      { name: 'Agile Methodologies', rating: 7.5 }
+    ],
+    empId: 2004
+  },
+  {
+    name: 'Rajesh Kapoor',
+    age: 38,
+    city: 'Bangalore',
+    dept: 'HR',
+    salary: 90000,
+    projects: {
+      current: 'Cloud Infrastructure',
+      completed: 'DevOps Automation'
+    },
+    skills: [
+      { name: 'AWS', rating: 9 },
+      { name: 'Kubernetes', rating: 8.5 },
+      { name: 'Docker', rating: 8 }
+    ],
+    empId: 2005
+  }
+]);
+
+Creating INDEXES
+
+----> ——————Simple Index———————
+db.employee.createIndex({ name: 1 });
+----> ——————Compound Index———————
+db.employee.createIndex({ name: 1, dept: 1, age: 1 });
+----> ——————Unique Index—————————
+db.employee.createIndex({ name: 1, city: 1 }, { unique: true });
+
+
+	 AGGREGATION
+
+1.Compute average salary of all employees:
+db.employee.aggregate([
+{
+	$group: {
+	_id:null,
+	avg_salary: { $avg: "$salary" },
+	}
+}
+]);
+
+
+2. Compute count of employee in each department
+db.employee.aggregate([
+{
+    $group: {
+        _id: "$dept",
+        total_employees: { $count: {} }
+    }
+}
+]);
+
+
+3. Compute average salary by department
+db.employee.aggregate([
+{
+    $group: {
+        _id: "$dept",
+        avg_dept_salary: { $avg: "$salary" },
+    }
+}
+]);
+
+
+4. Compute avg of all the skill's ratings for each employee belonging to the marketing dept and determine the 										   employee with highest avg.
+
+db.employee.aggregate([
+  { $match: { dept: "Marketing" } },
+  { $unwind: "$skills" },
+  { 
+    $group: {
+      _id: { name: "$name", empId: "$empId" }, // Group by name and empId
+      avgSkillRating: { $avg: "$skills.rating" }
+    }
+  },
+  { $sort: { avgSkillRating: -1 } },
+  { $limit: 1 }
+]);
+
+
+
+==============================================================================================================
+
+======================================= Assignment 11 ========================================================
+MongoDB Map-reduces operations: 
+Implement Map reduces operation with suitable example using MongoDB.
+
+->
+query 1 -> Count the total salary by dept
+db.employee.mapReduce(
+	function(){
+		emit(this.dept,this.salary);
+	},
+	function(key,values){
+		return Array.sum(values);
+	},
+	{
+		out : "total_salary_bydept"
+	},	
+);
+
+query 2 -> Count the total count of employee in each dept.
+db.employee.mapReduce(
+    function() {
+        emit(this.dept, 1);
+    },
+    function(key, values) {
+        return Array.sum(values);
+    },
+    {
+        out: "employee_count_by_dept"  //
+    }
+);
+
+query 3 -> Compute avg salary by dept.
+db.employee.mapReduce(
+    function() {
+        emit(this.dept, { totalSalary: this.salary, count: 1 });
+    },
+    function(key, values) {
+        return values.reduce((acc, curr) => {
+            acc.totalSalary += curr.totalSalary;  // Sum total salary
+            acc.count += curr.count;                // Sum count of employees
+            return acc;
+        }, { totalSalary: 0, count: 0 });
+    },
+    {
+        out: "average_salary_by_dept",  // Output collection
+        finalize: function(key, reducedValue) {
+            return reducedValue.totalSalary / reducedValue.count;  // Calculate average
+        }
+    }
+);
+
+query 4 -> Count the total count of employee in each city.
+
+db.employee.mapReduce(
+  function() {
+    emit(this.city, 1);
+  },
+  function(key, values) {
+    return Array.sum(values);
+  },
+  {
+    out: "employee_count_by_city"
+  }
+);
+
+query 5 -> List the names of employees who earn more than 70,000.
+
+db.employee.mapReduce(
+  function() {
+    if (this.salary > 70000) {
+      emit(this.empId, this.name);
+    }
+  },
+  function(key, values) {
+    return values[0]; // Return the name
+  },
+  {
+    out: "high_salary_employees"
+  }
+);
+
+==============================================================================================================
+
+======================================= Assignment 12 ========================================================
+Database Connectivity: 
+Write a program to implement Mongo DB database connectivity with any front end language to   implement Database navigation operations(add, delete, edit etc.) 
+
+->
+package javaconnect1;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+import java.util.Scanner;
+
+public class javaconnectdb {
+
+	private static MongoClient mongoClient;
+    private static MongoDatabase database;
+    private static MongoCollection<Document> collection;
+    private static Scanner scanner;
+
+    public static void main(String[] args) {
+        // Initialize MongoDB connection
+        mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
+        database = mongoClient.getDatabase("mydatabase");
+        collection = database.getCollection("mycollection");
+        scanner = new Scanner(System.in);
+
+        boolean running = true;
+
+        while (running) {
+            System.out.println("\nMenu:");
+            System.out.println("1. Insert Document");
+            System.out.println("2. Delete Document");
+            System.out.println("3. Find Document");
+            System.out.println("4. Update Document");
+            System.out.println("5. Display All Documents");
+            System.out.println("6. Exit");
+            System.out.print("Choose an option: ");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); 
+
+            switch (choice) {
+                case 1:
+                    insertDocument();
+                    break;
+                case 2:
+                    deleteDocument();
+                    break;
+                case 3:
+                    findDocument();
+                    break;
+                case 4:
+                    updateDocument();
+                    break;
+                case 5:
+                    displayAllDocuments();
+                    break;
+                case 6:
+                    running = false;
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+
+        // Close the client
+        mongoClient.close();
+        scanner.close();
+    }
+
+    private static void insertDocument() {
+        System.out.println("\nLet's add a new document!");
+        System.out.print("Enter name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter age: ");
+        int age = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Enter city: ");
+        String city = scanner.nextLine();
+
+        Document doc = new Document("name", name)
+                .append("age", age)
+                .append("city", city);
+
+        collection.insertOne(doc);
+        System.out.println("Document inserted: " + doc.toJson());
+    }
+
+    private static void deleteDocument() {
+        System.out.print("Enter the name of the document to delete: ");
+        String name = scanner.nextLine();
+        Document result = collection.findOneAndDelete(new Document("name", name));
+
+        if (result != null) {
+            System.out.println("Document deleted: " + result.toJson());
+        } else {
+            System.out.println("Document not found.");
+        }
+    }
+
+    private static void findDocument() {
+        System.out.print("Enter the name of the document to find: ");
+        String name = scanner.nextLine();
+        Document doc = collection.find(new Document("name", name)).first();
+
+        if (doc != null) {
+            System.out.println("Document found: " + doc.toJson());
+        } else {
+            System.out.println("Document not found.");
+        }
+    }
+
+    private static void updateDocument() {
+        System.out.print("Enter the name of the document to update: ");
+        String name = scanner.nextLine();
+        Document doc = collection.find(new Document("name", name)).first();
+
+        if (doc != null) {
+            System.out.print("Enter new age (current: " + doc.getInteger("age") + "): ");
+            int newAge = scanner.nextInt();
+            scanner.nextLine(); 
+            System.out.print("Enter new city (current: " + doc.getString("city") + "): ");
+            String newCity = scanner.nextLine();
+
+            Document updatedDoc = new Document("name", name)
+                    .append("age", newAge)
+                    .append("city", newCity);
+
+            collection.replaceOne(new Document("name", name), updatedDoc);
+            System.out.println("Document updated: " + updatedDoc.toJson());
+        } else {
+            System.out.println("Document not found.");
+        }
+    }
+
+    private static void displayAllDocuments() {
+        System.out.println("\nDisplaying all documents:");
+        for (Document doc : collection.find()) {
+            System.out.println(doc.toJson());
+        }
+    }
+
+
+}
+
+==============================================================================================================
