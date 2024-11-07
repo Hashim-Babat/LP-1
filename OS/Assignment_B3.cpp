@@ -19,11 +19,12 @@ void display(vector<Block>& memory){
     }
     cout<<endl;
 }
-void firstFit(vector<Block>& memory, int requestSize) {
+void firstFit(vector<Block>& memory, int requestSize, int& lastIndex) {
     for (int i = 0; i < memory.size(); ++i) {
         if (!memory[i].allocated && memory[i].size >= requestSize) {
             memory[i].allocated = true;
             memory[i].process = requestSize;
+            lastIndex = i;
             cout << "First Fit : Allocated " << requestSize << " units at memory block " << i << endl;
             return;
         }
@@ -54,7 +55,7 @@ int nextFit(vector<Block>& memory, int requestSize, int& lastIndex) {
     return -1;
 }
 
-void bestFit(vector<Block>& memory, int requestSize) {
+void bestFit(vector<Block>& memory, int requestSize, int& lastIndex) {
     int bestFitIndex = -1;
     int minFragmentation = INT_MAX;
 
@@ -64,6 +65,7 @@ void bestFit(vector<Block>& memory, int requestSize) {
             if (fragmentation < minFragmentation) {
                 minFragmentation = fragmentation;
                 bestFitIndex = i;
+                lastIndex = i;
             }
         }
     }
@@ -77,7 +79,7 @@ void bestFit(vector<Block>& memory, int requestSize) {
     }
 }
 
-void worstFit(vector<Block>& memory, int requestSize) {
+void worstFit(vector<Block>& memory, int requestSize, int& lastIndex) {
     int worstFitIndex = -1;
     int maxFragmentation = -1;
 
@@ -87,6 +89,7 @@ void worstFit(vector<Block>& memory, int requestSize) {
             if (fragmentation > maxFragmentation) {
                 maxFragmentation = fragmentation;
                 worstFitIndex = i;
+                lastIndex = i;
             }
         }
     }
@@ -131,7 +134,7 @@ int main() {
             int requestSize;
             cout << "Enter size to allocate : ";
             cin >> requestSize;
-            firstFit(memory, requestSize);
+            firstFit(memory, requestSize,lastIndex);
             display(memory);
         }
         else if(ch==2){
@@ -145,14 +148,14 @@ int main() {
             int requestSize;
             cout << "Enter size to allocate : ";
             cin >> requestSize;
-            bestFit(memory, requestSize);
+            bestFit(memory, requestSize,lastIndex);
             display(memory);
         }
         else if(ch==4){
             int requestSize;
             cout << "Enter size to allocate : ";
             cin >> requestSize;
-            worstFit(memory, requestSize);
+            worstFit(memory, requestSize,lastIndex);
             display(memory);
         }
         else if(ch==5){
