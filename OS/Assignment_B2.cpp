@@ -7,57 +7,95 @@
 // Waiting Time = Turn Around Time  –  Burst Time
 #include<bits/stdc++.h>
 using namespace std;
-void FCFS(vector<vector<int>>& process){
+void FCFS(vector<vector<int>>& process) {
     int n = process.size();
-    process[0][4]=0;
-    process[0][2]=process[0][1];
-    process[0][3]=process[0][2]-process[0][0];
-    double avgTA= process[0][3];
-    double avgW=process[0][4];
-    for(int i=1;i<n;i++){
-        process[i][2] = process[i-1][2] + process[i][1];
-        process[i][3] = process[i][2] - process[i][0];
-        process[i][4] = process[i][3] - process[i][1];
+    int currentTime = 0;
+    // Sort processes by arrival time
+    sort(process.begin(), process.end(), [](const vector<int>& a, const vector<int>& b) {
+        return a[0] < b[0];  // Sort by arrival time
+    });
+    // Initialize the first process
+    if (currentTime < process[0][0]) {
+        currentTime = process[0][0];  // Move time to the arrival time of the first process if idle
+    }
+    process[0][2] = currentTime + process[0][1];  // Completion time
+    process[0][3] = process[0][2] - process[0][0];  // Turn-Around Time (CT - AT)
+    process[0][4] = process[0][3] - process[0][1];  // Waiting Time (TAT - BT)
+    currentTime = process[0][2];
+    double avgTA = process[0][3];
+    double avgW = process[0][4];
+    // Iterate over the remaining processes
+    for (int i = 1; i < n; i++) {
+        if (currentTime < process[i][0]) {
+            currentTime = process[i][0];  // Move time to the next process's arrival time if idle
+        }
+        process[i][2] = currentTime + process[i][1];  // Completion time
+        process[i][3] = process[i][2] - process[i][0];  // Turn-Around Time (CT - AT)
+        process[i][4] = process[i][3] - process[i][1];  // Waiting Time (TAT - BT)
+        currentTime = process[i][2];  // Update current time after process execution
+
         avgW += process[i][4];
         avgTA += process[i][3];
     }
-    cout<<"\nProcess Name\tArrival Time\tBurst Time\tCompletion Time\tTurn-Around Time\tWaiting Time";
-    for(int i=0;i<n;i++){
-        cout<<"\nP["<<i<<"] : \t\t"<<process[i][0]<<"\t\t"<<process[i][1]<<"\t\t"<<process[i][2]<<"\t\t"<<process[i][3]<<"\t\t\t"<<process[i][4];
+    cout << "\nProcess Name\tArrival Time\tBurst Time\tCompletion Time\tTurn-Around Time\tWaiting Time";
+    for (int i = 0; i < n; i++) {
+        cout << "\nP[" << i << "] : \t\t" << process[i][0] << "\t\t" << process[i][1] << "\t\t" << process[i][2] << "\t\t" << process[i][3] << "\t\t\t" << process[i][4];
     }
-    cout<<"\nAverage Turn-Around Time : "<<avgTA/n;
-    cout<<"\nAverage Waiting Time : "<<avgW/n;
+    cout << "\nAverage Turn-Around Time: " << avgTA / n;
+    cout << "\nAverage Waiting Time: " << avgW / n;
 }
-bool comparebypriority(vector<int>& a,vector<int>& b){
-    return a[5] < b[5] ;
+bool compareByPriority(const vector<int>& a, const vector<int>& b) {
+    return a[5] < b[5];  // Compare by priority (lower value means higher priority)
 }
-void Priority(vector<vector<int>>& process){
+void Priority(vector<vector<int>>& process) {
     int n = process.size();
-    for(int i=0;i<n;i++){
-        cout<<"\nEnter the priority for process -> P["<<i<<"] : ";
-        int c;
-        cin>>c;
-        process[i][5] = c;
+    vector<bool> completed(n, false);
+    int currentTime = 0;
+    int completedProcesses = 0;
+    for (int i = 0; i < n; i++) {
+        cout << "\nEnter the priority for process -> P[" << i << "] : ";
+        int priority;
+        cin >> priority;
+        process[i][5] = priority;  // Set the priority for each process
     }
-    sort(process.begin(),process.end(),comparebypriority);
-    process[0][4]=0;
-    process[0][2]=process[0][1];
-    process[0][3]=process[0][2]-process[0][0];
-    double avgTA= process[0][3];
-    double avgW=process[0][4];
-    for(int i=1;i<n;i++){
-        process[i][2] = process[i-1][2] + process[i][1];
-        process[i][3] = process[i][2] - process[i][0];
-        process[i][4] = process[i][3] - process[i][1];
-        avgW += process[i][4];
+    while (completedProcesses < n) {
+        int minPriorityIndex = -1;
+        for (int i = 0; i < n; i++) {
+            if (!completed[i] && process[i][0] <= currentTime) {
+                if (minPriorityIndex == -1 || process[i][5] < process[minPriorityIndex][5]) {
+                    minPriorityIndex = i;
+                }
+            }
+        }
+        if (minPriorityIndex == -1) {
+            currentTime++;
+            continue;
+        }
+        int i = minPriorityIndex;
+        completed[i] = true;
+        completedProcesses++;
+        if (currentTime < process[i][0]) {
+            currentTime = process[i][0];
+        }
+        process[i][2] = currentTime + process[i][1];  // Completion time
+        process[i][3] = process[i][2] - process[i][0];  // Turn-Around Time (CT - AT)
+        process[i][4] = process[i][3] - process[i][1];  // Waiting Time (TAT - BT)
+        currentTime = process[i][2];
+
+        cout << "\nExecuting process P[" << i << "] at time " << currentTime;
+    }
+    double avgTA = 0;
+    double avgW = 0;
+    for (int i = 0; i < n; i++) {
         avgTA += process[i][3];
+        avgW += process[i][4];
     }
-    cout<<"\nProcess Name\tArrival Time\tBurst Time\tCompletion Time\tTurn-Around Time\tWaiting Time\tPriority";
-    for(int i=0;i<n;i++){
-        cout<<"\nP["<<i<<"] : \t\t"<<process[i][0]<<"\t\t"<<process[i][1]<<"\t\t"<<process[i][2]<<"\t\t"<<process[i][3]<<"\t\t\t"<<process[i][4]<<"\t\t\t"<<process[i][5];
+    cout << "\n\nProcess Name\tArrival Time\tBurst Time\tCompletion Time\tTurn-Around Time\tWaiting Time\tPriority";
+    for (int i = 0; i < n; i++) {
+        cout << "\nP[" << i << "] : \t\t" << process[i][0] << "\t\t" << process[i][1] << "\t\t" << process[i][2] << "\t\t" << process[i][3] << "\t\t\t" << process[i][4] << "\t\t\t" << process[i][5];
     }
-    cout<<"\nAverage Turn-Around Time : "<<avgTA/n;
-    cout<<"\nAverage Waiting Time : "<<avgW/n;
+    cout << "\nAverage Turn-Around Time: " << avgTA / n;
+    cout << "\nAverage Waiting Time: " << avgW / n;
 }
 bool comparebyBurst(vector<int>& a,vector<int>& b){
     return a[1] < b[1];
@@ -117,59 +155,63 @@ int find(vector<int>& v,int val){
     }
     return -1;
 }
-void roundRobin(vector<vector<int>>& process){
+void roundRobin(vector<vector<int>>& process) {
     int n = process.size();
-    cout<<"\nEnter the Time Quantum : ";
-    int s,currTime=0;
-    cin>>s;
-    vector<int> p(n,0);
-    for(int i=0;i<n;i++){
-        p[i] = process[i][1];
-    }
-    queue<vector<int>> q;
-    for(int i=0;i<n;i++){
+    cout << "\nEnter the Time Quantum: ";
+    int timeQuantum, currTime = 0;
+    cin >> timeQuantum;
+
+    vector<int> completionTime(n, 0);
+    queue<vector<int>> readyQueue;
+
+    for (int i = 0; i < n; i++) {
         process[i][5] = process[i][1];
-        vector<int> v = process[i];
-        q.push(v);
+        vector<int> temp = process[i];
+        temp[2] = i;
+        readyQueue.push(temp);
     }
-    while(!q.empty()){
-        vector<int> v1 = q.front();
-        q.pop();
-        int actual = v1[1];
-        int no = find(p,actual);
-        cout<<"\nSlot : "<<currTime <<" - "<<currTime+s<<" Process ["<<no<<"] ";
-        int burst = v1[5];
-        if(burst < s){
-            v1[5] = 0;
-            p[no] = currTime + s;
+
+    while (!readyQueue.empty()) {
+        vector<int> currentProcess = readyQueue.front();
+        readyQueue.pop();
+        int processNumber = currentProcess[2];
+        int arrivalTime = currentProcess[0];
+        int remainingBurst = currentProcess[5];
+
+        if (arrivalTime <= currTime) {
+            cout << "\nSlot: " << currTime << " - ";
+            if (remainingBurst <= timeQuantum) {
+                currTime += remainingBurst;
+                cout << currTime << " Process [" << processNumber << "] completed";
+                currentProcess[5] = 0;
+                completionTime[processNumber] = currTime;
+            } else {
+                currTime += timeQuantum;
+                cout << currTime << " Process [" << processNumber << "]";
+                currentProcess[5] -= timeQuantum;
+                readyQueue.push(currentProcess);
+            }
+        } else {
+            readyQueue.push(currentProcess);
+            if (readyQueue.front()[0] > currTime) {
+                currTime = readyQueue.front()[0];
+            }
         }
-        else if(burst==s){
-            v1[5] = 0;
-            p[no] = currTime + s;
-        }
-        else if(burst > s){
-            v1[5] = v1[5]-s;
-            q.push(v1);
-        }
-        currTime += s;
     }
-    for(int i=0;i<n;i++){
-        process[i][2] = p[i] ;
-    }
-    double avgTA = 0;
-    double avgW = 0;
-    for(int i=0;i<n;i++){
+    double avgTurnaroundTime = 0, avgWaitingTime = 0;
+    for (int i = 0; i < n; i++) {
+        process[i][2] = completionTime[i];
         process[i][3] = process[i][2] - process[i][0];
         process[i][4] = process[i][3] - process[i][1];
-        avgW += process[i][4];
-        avgTA += process[i][3];
+        avgTurnaroundTime += process[i][3];
+        avgWaitingTime += process[i][4];
     }
-    cout<<"\nProcess Name\tArrival Time\tBurst Time\tCompletion Time\tTurn-Around Time\tWaiting Time";
-    for(int i=0;i<n;i++){
-        cout<<"\nP["<<i<<"] : \t\t"<<process[i][0]<<"\t\t"<<process[i][1]<<"\t\t"<<process[i][2]<<"\t\t"<<process[i][3]<<"\t\t\t"<<process[i][4];
+    cout << "\n\nProcess Name\tArrival Time\tBurst Time\tCompletion Time\tTurn-Around Time\tWaiting Time";
+    for (int i = 0; i < n; i++) {
+        cout << "\nP[" << i << "] : \t\t" << process[i][0] << "\t\t" << process[i][1] << "\t\t" << process[i][2] << "\t\t" << process[i][3] << "\t\t\t" << process[i][4];
     }
-    cout<<"\nAverage Turn-Around Time : "<<avgTA/n;
-    cout<<"\nAverage Waiting Time : "<<avgW/n;
+    cout << "\nAverage Turn-Around Time: " << avgTurnaroundTime / n;
+    cout << "\nAverage Waiting Time: " << avgWaitingTime / n;
 }
 int main(){
     int n;
