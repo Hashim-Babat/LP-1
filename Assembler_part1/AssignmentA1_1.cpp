@@ -39,7 +39,7 @@ int main()
     opcode["ANY"] = {"6", ""};
 
     ifstream fin;
-    fin.open("input2.txt");
+    fin.open("testcase1.txt");
 
     ofstream fout;
     fout.open("output.txt");
