@@ -74,7 +74,7 @@ int main() {
                 continue;
             }
 
-            // Operand 1
+            // Operand 1 : Registers
             st >> word;
             if (word[1] != 'S' && word[1] != 'L') {
                 fout << word.substr(1, 1) << " ";
@@ -83,7 +83,7 @@ int main() {
                 fout << "0 ";
             }
 
-            // Operand 2
+            // Operand 2 
             int num = stoi(word.substr(3, 2)) - 1;
             if (word[1] == 'S') {
                 fout << symtab[num].second << endl;
