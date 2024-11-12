@@ -20,7 +20,7 @@ st.markdown(
 
 # Title and main header
 st.title("Railway Management System")
-st.header("Welcome to the Railway Management System")
+st.header("Welcome to the    Railway Management System")
 
 # Sidebar navigation
 menu = st.sidebar.radio("Select an Option", ["PNR Status Check", "Seat Availability", "Book Ticket", "Train Schedules", "Fare Inquiry", "Cancel Ticket", "Feedback"])
@@ -29,11 +29,11 @@ menu = st.sidebar.radio("Select an Option", ["PNR Status Check", "Seat Availabil
 if "booking_details" not in st.session_state:
     # Add 5 random person details as default data
     st.session_state.booking_details = [
-        {"Name": "John Doe", "Age": 29, "Train Number": "12345", "Date": "2024-11-01", "Class": "3A"},
-        {"Name": "Jane Smith", "Age": 34, "Train Number": "54321", "Date": "2024-11-03", "Class": "Sleeper"},
-        {"Name": "Alice Johnson", "Age": 25, "Train Number": "67890", "Date": "2024-11-05", "Class": "2A"},
-        {"Name": "Bob Brown", "Age": 42, "Train Number": "98765", "Date": "2024-11-07", "Class": "1A"},
-        {"Name": "Charlie Davis", "Age": 31, "Train Number": "24680", "Date": "2024-11-09", "Class": "Sleeper"}
+        {"Name": "Ketan Bajaj", "Age": 29, "Train Number": "12345", "Date": "2023-07-01", "Class": "3A"},
+        {"Name": "Niranjan Dangi", "Age": 34, "Train Number": "54321", "Date": "2021-04-03", "Class": "Sleeper"},
+        {"Name": "Anish Dabhane", "Age": 25, "Train Number": "67890", "Date": "2024-01-05", "Class": "2A"},
+        {"Name": "Hashim Babat", "Age": 21, "Train Number": "98765", "Date": "2022-12-07", "Class": "1A"},
+        {"Name": "Aarya Bhave"  , "Age": 31, "Train Number": "24680", "Date": "2020-11-09", "Class": "Sleeper"}
     ]
 
 if menu == "PNR Status Check":

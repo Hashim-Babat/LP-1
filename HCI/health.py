@@ -9,7 +9,7 @@ st.set_page_config(page_title="Health Tracking Dashboard", layout="wide")
 st.markdown("""
     <style>
         .main {background-color: #E0F7FA;}
-        .header {font-size:30px; font-weight:bold; color:#00796B; text-align:center;}
+        .header {font-size:30px; font-weight:bold; color:#00796B ; text-align:center;}
         .subheader {font-size:24px; font-weight:bold; color:#00796B;}
     </style>
     """, unsafe_allow_html=True)
@@ -56,6 +56,7 @@ elif page == "Daily Logs":
 
     if st.button("Save Log"):
         st.success("Log saved successfully!")
+    
 
 # Trends Section - Shows simple progress visualization
 elif page == "Trends":
