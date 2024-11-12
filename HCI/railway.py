@@ -20,7 +20,7 @@ st.markdown(
 
 # Title and main header
 st.title("Railway Management System")
-st.header("Welcome to the    Railway Management System")
+st.header("Welcome to the Railway Management System")
 
 # Sidebar navigation
 menu = st.sidebar.radio("Select an Option", ["PNR Status Check", "Seat Availability", "Book Ticket", "Train Schedules", "Fare Inquiry", "Cancel Ticket", "Feedback"])

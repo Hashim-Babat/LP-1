@@ -1,10 +1,32 @@
 import streamlit as st
 import pandas as pd
 from streamlit_option_menu import option_menu  # Import option menu library
-
+st.markdown(
+    """
+    <style>
+    /* Customize the color of buttons */
+    .stButton>button {
+        background-color: #40AF50; /* Green button */
+        color: white;
+        border-radius: 5px;
+        border: none;
+        padding: 10px 20px;
+    }
+    .h1{
+        color:red;
+        font-size:24px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 # Sample train numbers for auto-complete
 train_numbers = ["12345", "54321", "67890", "98765", "24680"]
 classes = ["Sleeper", "3A", "2A", "1A"]
+
+# Title and main header
+st.title("Railway Management System")
+st.markdown('<div class="h1"> Welcome to the Railway Management System </div>',unsafe_allow_html=True)
 
 # Custom CSS for styling
 st.markdown(
