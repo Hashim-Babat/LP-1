@@ -134,7 +134,6 @@ void processIC() {
                 string key = words[i].substr(1,1);
                 string value = words[i].substr(equals_pos+1);
                 value.erase(remove(value.begin(),value.end(),','),value.end());
-                // cout<<"key: "<<key<<endl;
                 if(!value.empty()){
                     temp[key]=value;
                 }
@@ -209,7 +208,7 @@ int main() {
     readMNT();   // Read MNT
     readPNTAB(); // Read PNTAB
     readKPDT();  // Read KPDT
-    processIC(); // Process IC
+    processIC(); // Process IC                                              
 
     // Write the final output to a file or print it
     ofstream outfile("ExpandedOutput.txt", ios::out);
