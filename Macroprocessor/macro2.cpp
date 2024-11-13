@@ -9,6 +9,7 @@ string output = "";
 
 // Function to read the MNT from the file
 void readMNT() {
+    cout<<"-------MNT-------"<<endl;
     ifstream file("MNT.txt");
     if (!file.is_open()) {
         cerr << "Unable to open MNT file" << endl;
@@ -19,14 +20,18 @@ void readMNT() {
         stringstream ss(line);
         string macro_name;
         int pp, kp, mdtp, kptp;
+        // M1	2	2	1	1
         ss >> macro_name >> pp >> kp >> mdtp >> kptp;
         mnt[macro_name] = {pp, kp, mdtp, kptp};
+        cout<<"["<<macro_name<<"]: "<<pp<<" "<<kp<<" "<<mdtp<<" "<<kptp<<endl;
+
     }
     file.close();
 }
 
 // Function to read the PNTAB from the file
 void readPNTAB() {
+    cout<<"------PNTAB------"<<endl;
     ifstream file("PNTAB.txt");
     if (!file.is_open()) {
         cerr << "Unable to open PNTAB file" << endl;
@@ -37,10 +42,14 @@ void readPNTAB() {
         stringstream ss(line);
         string macro_name, param;
         vector<string> params;
+        // M1	X	Y	A	B	
         ss >> macro_name; // First token is the macro name
+        cout<<"["<<macro_name<<"]: ";
         while (ss >> param) {
+            cout<<param<<" ";
             params.push_back(param); // Store parameters
         }
+        cout<<endl;
         pntab[macro_name] = params; // Associate macro with its parameters
     }
     file.close();
@@ -48,6 +57,7 @@ void readPNTAB() {
 
 // Function to read the KPDT from the file
 void readKPDT() {
+    cout<<"------KPDT------"<<endl;
     ifstream file("KPDT.txt");
     if (!file.is_open()) {
         cerr << "Unable to open KPDT file" << endl;
@@ -59,6 +69,7 @@ void readKPDT() {
         string key, value;
         ss >> key >> value; // Read keyword and its default value
         kpdt[key] = value; // Store in map
+        cout<<"["<<key<<"]: "<<value<<endl;
     }
     file.close();
 }
@@ -94,32 +105,46 @@ void processIC() {
         } 
 
         // Get MNT values for the macro
-        int pp = mnt[words[0]][0];
+        string macro_name = words[0];
+        int pp = mnt[words[0]][0]; // words[0] is a macro name
         int kp = mnt[words[0]][1];
         int mdtp = mnt[words[0]][2];
         aptab.clear();  // Clear previous APTAB entries
 
         // Handling positional parameters
         if (words.size() < pp + 1) {
-            cerr << "Error: Not enough positional parameters for macro " << words[0] << endl;
+            cerr << "Error: Not enough positional parameters for macro: " << words[0] << endl;
             return;
         }
-        for (int i = 1; i <= pp; ++i) {
-            aptab[i] = words[i];
+        cout<<"------APTAB-----"<<endl;
+        for (int i = 1; i <= pp; i++) {
+            string value=words[i];
+            value.erase(remove(value.begin(), value.end(), ','), value.end());
+            aptab[i] = value;
+            cout<<"["<<i<<"]: "<<aptab[i]<<endl;
         }
 
         // Handling keyword parameters
-        for (int i = pp + 1; i < words.size(); ++i) {
-            size_t equals_pos = words[i].find('=');
-            if (equals_pos != string::npos) {
-                string key = words[i].substr(0, equals_pos);
-                string value = words[i].substr(equals_pos + 1);               
-                if (value.empty()) {
-                    aptab[i] = kpdt[key];  // Use default if value is empty
-                } else {
-                    aptab[i] = value;
+        // Creating temp datastructure for storing (default argument)
+        unordered_map<string,string> temp;
+        temp = kpdt;
+        for(int i=pp+1;i <words.size();i++){
+            int equals_pos = words[i].find('=');
+            if(equals_pos !=string::npos){
+                string key = words[i].substr(1,1);
+                string value = words[i].substr(equals_pos+1);
+                value.erase(remove(value.begin(),value.end(),','),value.end());
+                // cout<<"key: "<<key<<endl;
+                if(!value.empty()){
+                    temp[key]=value;
                 }
             }
+        }
+        
+        for(int i =pp+1;i<=pp+kp;i++){
+            string param = pntab[macro_name].at(i-1);
+            aptab[i]=temp[param];
+            cout<<"["<<i<<"]: "<<aptab[i]<<endl;
         }
 
         // Move MDT pointer to the appropriate macro definition
@@ -130,12 +155,12 @@ void processIC() {
         int mdt_counter = 0;  // Track the current line in MDT
         bool macro_found = false;
 
-        while (getline(mdtFile, mdt_line)) {
+        do{
             if (++mdt_counter == mdtp) {  // Find the correct MDT index
                 macro_found = true;
                 break;
             }
-        }
+        }while(getline(mdtFile,mdt_line));
 
         if (!macro_found) {
             cerr << "Error: Could not find MDT entry for macro " << words[0] << endl;
@@ -144,10 +169,11 @@ void processIC() {
 
         // Process the macro's MDT
         while (getline(mdtFile, mdt_line)) {
-            if (mdt_line == "MEND") {
+            stringstream temp(mdt_line);
+            temp >> word;
+            if (word == "MEND") {
                 break;  // Stop processing on MEND, do not add to output
             }
-
             stringstream mdt_ss(mdt_line);
             vector<string> mdt_words;
             while (mdt_ss >> word) {
